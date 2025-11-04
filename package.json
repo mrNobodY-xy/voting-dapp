@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://github.com/mrNobodY-xy/masterclass",
+  "homepage": "https://github.com/mrNobodY-xy/voting-dapp",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -19,7 +19,8 @@
     "react": "^19.1.1",
     "react-bootstrap": "^2.10.10",
     "react-dom": "^19.1.1",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.9.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

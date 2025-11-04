@@ -21,5 +21,11 @@
   "loadingResults": "Loading results...",
   "totalVotes": "Total Votes",
   "votes": "votes",
-  "copyright": "Masterclass Voting dApp © 2025"
+  "copyright": "Masterclass Voting dApp © 2025",
+   "getTokens": "Get Tokens",
+  "claimTokens": "Claim 100 MTK",
+  "alreadyClaimed": "You have already claimed tokens",
+  "claimSuccess": "Successfully claimed 100 MTK!",
+  "claimingTokens": "Claiming tokens...",
+  "confirmClaim": "Confirm in MetaMask..."
 }

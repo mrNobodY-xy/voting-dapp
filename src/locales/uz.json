@@ -21,5 +21,11 @@
   "loadingResults": "Natijalar yuklanmoqda...",
   "totalVotes": "Jami ovozlar",
   "votes": "ovoz",
-  "copyright": "Masterclass Voting dApp © 2025"
+  "copyright": "Masterclass Voting dApp © 2025",
+   "getTokens": "Tokenlar olish",
+  "claimTokens": "100 MTK olish",
+  "alreadyClaimed": "Siz allaqachon tokenlar oldingiz",
+  "claimSuccess": "100 MTK muvaffaqiyatli olindi!",
+  "claimingTokens": "Tokenlar olinmoqda...",
+  "confirmClaim": "MetaMask da tasdiqni kuting..."
 }

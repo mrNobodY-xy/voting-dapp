@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import VotingDApp from './VotingDApp';
 import AdminPanel from './AdminPanel';
-
+import { BrowserRouter } from 'react-router-dom';
 function App() {
   const [currentPage, setCurrentPage] = useState('voting'); // 'voting' yoki 'admin'
 
-  return (
+  return ( <BrowserRouter>
     <div>
       {/* Navigation Tabs */}
       <div style={{ 
@@ -45,6 +45,7 @@ function App() {
 
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
     </div>
+    </BrowserRouter>
   );
 }
 

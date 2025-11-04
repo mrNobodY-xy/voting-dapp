@@ -3,13 +3,16 @@ import { ethers } from 'ethers';
 import uzTranslations from './locales/uz.json';
 import koTranslations from './locales/kr.json';
 import enTranslations from './locales/en.json';
+import { useSearchParams } from 'react-router-dom';
 // Smart Contract ABI
 const MASTER_TOKEN_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
   "function approve(address spender, uint256 amount) returns (bool)",
   "function allowance(address owner, address spender) view returns (uint256)",
   "function name() view returns (string)",
-  "function symbol() view returns (string)"
+  "function symbol() view returns (string)",
+  "function mintForNewUser()", // YANGI FUNKSIYA
+  "function hasMinted(address) view returns (bool)" // Tekshirish uchun (agar contractda bor bo'lsa)
 ];
 
 const VOTING_ABI = [
@@ -23,14 +26,7 @@ const VOTING_ABI = [
   "function token() view returns (address)",
   "event VoteCast(address indexed voter, uint256 optionId, uint256 amount)"
 ];
-
-// CONFIG
-const CONFIG = {
-  CHAIN_ID: 1337,
-  TOKEN_ADDRESS: "0x49ED54CfA80cB5389b6a6952A08317954a462C37",
-  VOTING_ADDRESS: "0xd8F97D3396fF9EF85104DC40e9931c8c18bF94ae"
-};
-
+ 
 // TRANSLATIONS
 const translations = {
   uz: uzTranslations,
@@ -51,6 +47,22 @@ function VotingDApp() {
   const [loading, setLoading] = useState(false);
   const [networkName, setNetworkName] = useState('');
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [hasClaimed, setHasClaimed] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
+
+  // URL query params dan olish, default qiymatlar bilan
+  const chainIdParam = searchParams.get('chain_id') || '1337';
+  const tokenAddressParam = searchParams.get('token_address') || '0x1829491F31Fb32DEC76ED1dA722326c183AD0968';
+  const votingAddressParam = searchParams.get('voting_address') || '0x94d9Dc60c5A470700e6c0b099962A3ad87205510';
+  const rpcUrlParam = searchParams.get('rpc_url') || 'http://127.0.0.1:8545';
+// CONFIG
+  const CONFIG = {
+    CHAIN_ID: parseInt(chainIdParam, 10),
+    TOKEN_ADDRESS: tokenAddressParam,
+    VOTING_ADDRESS: votingAddressParam,
+    RPC_URL: rpcUrlParam
+  };
 
   // Get translation
   const t = (key, params = {}) => {
@@ -97,7 +109,7 @@ function VotingDApp() {
   };
 
   // Network o'zgartirish
-  const switchNetwork = async () => {
+ const switchNetwork = async () => {
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
@@ -116,11 +128,11 @@ function VotingDApp() {
             params: [{
               chainId: ethers.toQuantity(CONFIG.CHAIN_ID),
               chainName: 'Localhost 8545',
-              rpcUrls: ['http://127.0.0.1:8545'],
+              rpcUrls: [CONFIG.RPC_URL],
               nativeCurrency: {
                 name: 'ETH',
                 symbol: 'ETH',
-                decimals: 18
+                decimals: 18,
               }
             }]
           });
@@ -191,7 +203,13 @@ function VotingDApp() {
         showAlert('danger', t('votingNotFound'));
         return;
       }
-
+      try {
+        const claimed = await tokenContract.hasMinted(account);
+        setHasClaimed(claimed);
+      }
+      catch (error) {
+      console.log('hasMinted check not available');
+    }
       const bal = await tokenContract.balanceOf(account);
       setBalance(ethers.formatEther(bal));
 
@@ -213,7 +231,65 @@ function VotingDApp() {
       showAlert('danger', t('loadError', { error: error.message }));
     }
   };
+// Token olish funksiyasi
+const claimTokens = async () => {
+  if (!isCorrectNetwork) {
+    showAlert('warning', t('switchNetworkFirst'));
+    return;
+  }
 
+  try {
+    setIsClaiming(true);
+    
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const tokenContract = new ethers.Contract(CONFIG.TOKEN_ADDRESS, MASTER_TOKEN_ABI, signer);
+
+    // Avval tekshirish (agar hasMinted funksiyasi bor bo'lsa)
+    try {
+      const alreadyClaimed = await tokenContract.hasMinted(account);
+      if (alreadyClaimed) {
+        showAlert('warning', t('alreadyClaimed'));
+        setHasClaimed(true);
+        setIsClaiming(false);
+        return;
+      }
+    } catch (error) {
+      // Agar hasMinted funksiyasi yo'q bo'lsa, davom etamiz
+      console.log('hasMinted check skipped');
+    }
+
+    showAlert('info', t('claimingTokens'));
+    
+    // mintForNewUser funksiyasini chaqirish
+    const tx = await tokenContract.mintForNewUser();
+    
+    showAlert('info', t('confirmClaim'));
+    
+    // Transaction tasdiqlashni kutish
+    const receipt = await tx.wait();
+    
+    showAlert('success', t('claimSuccess'));
+    setHasClaimed(true);
+    
+    // Balansni yangilash
+    await loadData();
+    
+  } catch (error) {
+    console.error('Claim error:', error);
+    
+    if (error.code === 4001 || error.code === 'ACTION_REJECTED') {
+      showAlert('warning', t('txRejected'));
+    } else if (error.message?.includes('already claimed')) {
+      showAlert('warning', t('alreadyClaimed'));
+      setHasClaimed(true);
+    } else {
+      showAlert('danger', t('error', { error: error.reason || error.message }));
+    }
+  } finally {
+    setIsClaiming(false);
+  }
+};
   // Ovoz berish
   const handleVote = async () => {
     if (!voteAmount || parseFloat(voteAmount) <= 0) {
@@ -345,6 +421,26 @@ function VotingDApp() {
             
             {account ? (
               <>
+               {/* GET TOKEN TUGMASI */}
+    {!hasClaimed && (
+      <button 
+        className="btn btn-success btn-sm"
+        onClick={claimTokens}
+        disabled={isClaiming || !isCorrectNetwork}
+      >
+        {isClaiming ? (
+          <>
+            <span className="spinner-border spinner-border-sm me-2"></span>
+            {t('claimingTokens')}
+          </>
+        ) : (
+          <>
+            <i className="bi bi-gift me-2"></i>
+            {t('claimTokens')}
+          </>
+        )}
+      </button>
+    )}
                 <span className="badge bg-success">{networkName}</span>
                 {!isCorrectNetwork && (
                   <button className="btn btn-warning btn-sm" onClick={switchNetwork}>

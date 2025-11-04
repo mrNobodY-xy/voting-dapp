@@ -21,5 +21,11 @@
   "loadingResults": "결과 로딩 중...",
   "totalVotes": "총 투표 수",
   "votes": "투표",
-  "copyright": "Masterclass 투표 dApp © 2025"
+  "copyright": "Masterclass 투표 dApp © 2025",
+  "getTokens": "토큰 받기",
+  "claimTokens": "100 MTK 받기",
+  "alreadyClaimed": "이미 토큰을 받았습니다",
+  "claimSuccess": "100 MTK를 성공적으로 받았습니다!",
+  "claimingTokens": "토큰 받는 중...",
+  "confirmClaim": "MetaMask에서 확인을 기다리세요..."
 }
